@@ -23,8 +23,13 @@ define([
           '</fieldset>',
           '<fieldset id="non-disabled-fieldset" tabindex="-1"></fieldset>',
           '<fieldset id="disabled-fieldset" tabindex="-1" disabled></fieldset>',
+          '<form disabled>',
+            '<input type="text" id="disabled-form-input">',
+          '</form>',
+          '<form id="non-disabled-form" tabindex="-1"></form>',
+          '<form id="disabled-form" tabindex="-1" disabled></form>',
           /*eslint-enable indent */
-        ].join(''));
+        ]);
       },
       afterEach: function() {
         fixture.remove();
@@ -34,7 +39,7 @@ define([
       invalid: function() {
         expect(function() {
           isDisabled(null);
-        }).to.throw(TypeError, 'is/disabled requires an argument of type Element');
+        }).to.throw(TypeError, 'is/disabled requires valid options.context');
       },
       'non-input': function() {
         var element = document.getElementById('non-input');
@@ -65,6 +70,27 @@ define([
         var element = document.getElementById('disabled-fieldset');
         var res = isDisabled(element);
         expect(res).to.equal(!supports.canFocusDisabledFieldset);
+      },
+      'disabled form input': function() {
+        var element = document.getElementById('disabled-form-input');
+        var res = isDisabled(element);
+        expect(res).to.equal(!supports.canFocusDisabledForm);
+      },
+      'non-disabled form': function() {
+        var element = document.getElementById('non-disabled-form');
+        var res = isDisabled(element);
+        expect(res).to.equal(false);
+      },
+      'disabled form': function() {
+        var element = document.getElementById('disabled-form');
+        var res = isDisabled(element);
+        expect(res).to.equal(!supports.canFocusDisabledForm);
+      },
+      'ally.element.disabled': function() {
+        var element = document.getElementById('non-disabled-input');
+        element.setAttribute('data-ally-disabled', 'true');
+        var res = isDisabled(element);
+        expect(res).to.equal(true);
       },
     };
   });

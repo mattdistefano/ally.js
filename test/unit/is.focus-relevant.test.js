@@ -29,7 +29,17 @@ define([
       invalid: function() {
         expect(function() {
           isFocusRelevant(null);
-        }).to.throw(TypeError, 'is/focus-relevant requires an argument of type Element');
+        }).to.throw(TypeError, 'is/focus-relevant requires valid options.context');
+        expect(function() {
+          isFocusRelevant([true]);
+        }).to.throw(TypeError, 'is/focus-relevant requires options.context to be an Element');
+      },
+      '.rules() and .except()': function() {
+        var element = document.getElementById('inert-div');
+        expect(isFocusRelevant.rules({
+          context: element,
+        })).to.equal(false, '.rules()');
+        expect(isFocusRelevant.rules.except({})(element)).to.equal(false, '.rules.except()');
       },
       'inert div': function() {
         var element = document.getElementById('inert-div');
@@ -89,12 +99,12 @@ define([
       },
       'img with usemap': function() {
         var element = document.getElementById('img-usemap');
-        expect(isFocusRelevant(element)).to.equal(false);
+        expect(isFocusRelevant(element)).to.equal(supports.canFocusRedirectImgUsemap);
       },
       'img with usemap and tabindex': function() {
         var element = document.getElementById('img-usemap');
         element.setAttribute('tabindex', '-1');
-        expect(isFocusRelevant(element)).to.equal(supports.canFocusImgUsemapTabindex);
+        expect(isFocusRelevant(element)).to.equal(supports.canFocusRedirectImgUsemap || supports.canFocusImgUsemapTabindex);
       },
       'object element referencing svg': function() {
         var element = document.getElementById('object-svg');
@@ -122,17 +132,17 @@ define([
 
         // NOTE: Firefox decodes DataURIs asynchronously
         setTimeout(deferred.callback(function() {
-          expect(isFocusRelevant(element)).to.equal(supports.canFocusAreaTabindex);
+          expect(isFocusRelevant(element)).to.equal(true);
         }), 200);
       },
       'label element': function() {
         var element = document.getElementById('label');
-        expect(isFocusRelevant(element)).to.equal(false);
+        expect(isFocusRelevant(element)).to.equal(true);
       },
       'label element with tabindex="-1"': function() {
         var element = document.getElementById('label');
         element.setAttribute('tabindex', '-1');
-        expect(isFocusRelevant(element)).to.equal(supports.canFocusLabelTabindex);
+        expect(isFocusRelevant(element)).to.equal(true);
       },
       'audio element': function() {
         var element = document.getElementById('audio');
@@ -144,24 +154,32 @@ define([
       },
       'svg element': function() {
         var element = document.getElementById('svg');
-        expect(isFocusRelevant(element)).to.equal(false);
+        expect(isFocusRelevant(element)).to.equal(supports.canFocusSvg);
       },
       'svg element with tabindex="-1"': function() {
         var element = document.getElementById('svg');
         element.setAttribute('tabindex', '-1');
-        expect(isFocusRelevant(element)).to.equal(supports.canFocusSvgMethod);
+        expect(isFocusRelevant(element)).to.equal(supports.canFocusSvg || supports.canFocusSvgTabindexAttribute);
       },
       'svg link element': function() {
         var element = document.getElementById('svg-link');
-        expect(isFocusRelevant(element)).to.equal(supports.canFocusSvgMethod);
+        expect(isFocusRelevant(element)).to.equal(true);
       },
       'embed element': function() {
         var element = document.getElementById('embed');
-        expect(isFocusRelevant(element)).to.equal(supports.canFocusEmbed);
+        if (!element) {
+          this.skip('skipping to avoid test colliding with QuickTime');
+        }
+
+        expect(isFocusRelevant(element)).to.equal(true);
       },
       'embed element with tabindex="0"': function() {
         var element = document.getElementById('embed-tabindex-0');
-        expect(isFocusRelevant(element)).to.equal(supports.canFocusEmbedTabindex);
+        if (!element) {
+          this.skip('skipping to avoid test colliding with QuickTime');
+        }
+
+        expect(isFocusRelevant(element)).to.equal(true);
       },
       'extended: CSS user-modify': function() {
         var _supports = document.body.style.webkitUserModify !== undefined;
@@ -181,14 +199,54 @@ define([
         expect(isFocusRelevant(element)).to.equal(supports.canFocusScrollContainer);
       },
       'extended: child of focusable flexbox': function() {
-        var span = fixture.add([
+        var element = fixture.add([
           /*eslint-disable indent */
-          '<div tabindex="-1" style="display: -ms-flexbox; display: flex;">',
+          '<div tabindex="-1" style="display: -webkit-flex; display: -ms-flexbox; display: flex;">',
             '<span style="display: block;">hello</span>',
           '</div>',
           /*eslint-enable indent */
         ]).firstElementChild.firstElementChild;
-        expect(isFocusRelevant(span)).to.equal(supports.canFocusChildrenOfFocusableFlexbox);
+        expect(isFocusRelevant(element)).to.equal(supports.canFocusChildrenOfFocusableFlexbox);
+      },
+      'extended: flexbox container': function() {
+        var element = fixture.add([
+          /*eslint-disable indent */
+          '<div style="display: -webkit-flex; display: -ms-flexbox; display: flex;">',
+            '<span style="display: block;">hello</span>',
+          '</div>',
+          /*eslint-enable indent */
+        ]).firstElementChild;
+        expect(isFocusRelevant(element)).to.equal(supports.canFocusFlexboxContainer);
+      },
+      'extended: Shadow DOM host': function() {
+        if (document.body.createShadowRoot === undefined) {
+          this.skip('Shadow DOM not supported');
+        }
+
+        var element = fixture.add([
+          /*eslint-disable indent */
+          '<div></div>',
+          /*eslint-enable indent */
+        ]).firstElementChild;
+        var root = element.createShadowRoot();
+        root.innerHTML = '<input>';
+
+        expect(isFocusRelevant(element)).to.equal(true);
+      },
+      'extended: Shadow DOM host with tabindex': function() {
+        if (document.body.createShadowRoot === undefined) {
+          this.skip('Shadow DOM not supported');
+        }
+
+        var element = fixture.add([
+          /*eslint-disable indent */
+          '<div tabindex="-1"></div>',
+          /*eslint-enable indent */
+        ]).firstElementChild;
+        var root = element.createShadowRoot();
+        root.innerHTML = '<input>';
+
+        expect(isFocusRelevant(element)).to.equal(true);
       },
     };
   });

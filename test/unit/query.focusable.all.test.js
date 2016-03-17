@@ -3,16 +3,14 @@ define([
   'intern/chai!expect',
   '../helper/fixtures/focusable.fixture',
   '../helper/fixtures/shadow-input.fixture',
-  '../helper/elements-string',
   '../helper/supports',
-  'platform',
+  'ally/util/platform',
   'ally/query/focusable',
 ], function(
   registerSuite,
   expect,
   focusableFixture,
   shadowInputFixture,
-  elementsString,
   supports,
   platform,
   queryFocusable
@@ -35,57 +33,82 @@ define([
       document: function() {
         var result = queryFocusable({
           strategy: 'all',
-        });
+        }).map(fixture.nodeToString);
 
-        var expected = '#tabindex--1, #tabindex-0, #tabindex-1'
-          + (supports.canFocusInvalidTabindex ? ', #tabindex-bad' : '')
-          + ', #link, #link-tabindex--1'
-          + ', #image-map-area'
-          + ', #object-svg'
-          + (platform.name === 'IE' ? ', #svg' : '')
-          + (supports.canFocusObjectSvg ? ', #object-tabindex-svg' : '')
-          + ', #svg-link'
-          + (supports.canFocusEmbed ? ', #embed' : '')
-          + (supports.canFocusEmbedTabindex ? ', #embed-tabindex-0' : '')
-          + ', #embed-svg'
-          + (supports.canFocusEmbedTabindex && supports.canFocusObjectSvg ? ', #embed-tabindex-svg' : '')
-          + (supports.canFocusAudioWithoutControls ? ', #audio' : '')
-          + ', #audio-controls'
-          + ', #input, #input-tabindex--1, #input-disabled'
-          + (supports.canFocusFieldset ? ', fieldset' : '')
-          + ', #fieldset-disabled-input'
-          + ', #span-contenteditable'
-          + (document.body.style.webkitUserModify !== undefined ? ', #span-user-modify' : '')
-          + ', #img-ismap-link'
-          + (supports.canFocusImgIsmap ? ', #img-ismap' : '')
-          + (supports.canFocusScrollContainer ? ', #scroll-container' : '')
-          + (supports.canFocusScrollBody ? ', #scroll-body' : '')
-          + (supports.canFocusScrollContainerWithoutOverflow ? ', #scroll-container-without-overflow, #scroll-body-without-overflow' : '');
+        var expected = [
+          '#tabindex--1',
+          '#tabindex-0',
+          '#tabindex-1',
+          supports.canFocusInvalidTabindex && '#tabindex-bad',
+          '#link',
+          '#link-tabindex--1',
+          '#image-map-area',
+          '#image-map-area-nolink',
+          supports.canFocusRedirectImgUsemap && '#img-usemap',
+          supports.canFocusObjectSvg && '#object-svg',
+          platform.is.TRIDENT && '#svg',
+          supports.canFocusObjectSvg && '#object-tabindex-svg',
+          '#svg-link',
+          !supports.AVOID_QUICKTIME && '#embed',
+          !supports.AVOID_QUICKTIME && '#embed-tabindex-0',
+          '#embed-svg',
+          '#embed-tabindex-svg',
+          !supports.AVOID_MEDIA && supports.canFocusAudioWithoutControls && '#audio',
+          !supports.AVOID_MEDIA && '#audio-controls',
+          '#label',
+          '#input',
+          '#input-tabindex--1',
+          '#input-disabled',
+          supports.canFocusFieldset && 'fieldset',
+          '#fieldset-disabled-input',
+          '#span-contenteditable',
+          document.body.style.webkitUserModify !== undefined && '#span-user-modify',
+          '#img-ismap-link',
+          supports.canFocusImgIsmap && '#img-ismap',
+          supports.canFocusScrollContainer && '#scroll-container',
+          supports.canFocusScrollBody && '#scroll-body',
+          supports.canFocusScrollContainerWithoutOverflow && '#scroll-container-without-overflow',
+          supports.canFocusScrollContainerWithoutOverflow && '#scroll-body-without-overflow',
+          supports.canFocusScrollContainer && '#div-section-overflow-scroll',
+          supports.canFocusScrollContainer && !supports.canFocusScrollBody && '#section-div-overflow-scroll',
+          supports.canFocusScrollBody && '#section-div-overflow-scroll-body',
+          supports.canFocusFlexboxContainer && '#flexbox-container',
+          supports.canFocusFlexboxContainer && '#flexbox-container-child',
+          '#focusable-flexbox',
+          supports.canFocusChildrenOfFocusableFlexbox && '#focusable-flexbox-child',
+        ].filter(Boolean);
 
-        expect(elementsString(result)).to.equal(expected);
+        expect(result).to.deep.equal(expected);
       },
 
       context: function() {
-        var expected = '#link, #link-tabindex--1';
+        var expected = [
+          '#link',
+          '#link-tabindex--1',
+        ];
         var result = queryFocusable({
           strategy: 'all',
           context: '.context',
-        });
+        }).map(fixture.nodeToString);
 
-        expect(elementsString(result)).to.equal(expected);
+        expect(result).to.deep.equal(expected);
       },
 
       'context and self': function() {
         fixture.root.querySelector('.context').setAttribute('tabindex', '-1');
 
-        var expected = 'div, #link, #link-tabindex--1';
+        var expected = [
+          'div',
+          '#link',
+          '#link-tabindex--1',
+        ];
         var result = queryFocusable({
           strategy: 'all',
           context: '.context',
           includeContext: true,
-        });
+        }).map(fixture.nodeToString);
 
-        expect(elementsString(result)).to.equal(expected);
+        expect(result).to.deep.equal(expected);
       },
 
       'children of <canvas>': function() {
@@ -100,21 +123,27 @@ define([
             '<span tabindex="-1" id="canvas-span-tabindex--1">hello</span>',
           '</canvas>',
           /*eslint-enable indent */
-        ].join(''), 'canvas-container');
+        ], 'canvas-container');
 
-        var expected = '#canvas-input, #canvas-input-tabindex--1, #canvas-a, #canvas-a-tabindex--1'
-          + ', #canvas-span-tabindex-0, #canvas-span-tabindex--1';
+        var expected = [
+          '#canvas-input',
+          '#canvas-input-tabindex--1',
+          '#canvas-a',
+          '#canvas-a-tabindex--1',
+          '#canvas-span-tabindex-0',
+          '#canvas-span-tabindex--1',
+        ];
         var result = queryFocusable({
           strategy: 'all',
           context: container,
           includeContext: true,
-        });
+        }).map(fixture.nodeToString);
 
-        expect(elementsString(result)).to.equal(expected);
+        expect(result).to.deep.equal(expected);
       },
 
       'extended: Shadow DOM': function() {
-        if (document.body.shadowRoot === undefined) {
+        if (document.body.createShadowRoot === undefined) {
           this.skip('Shadow DOM not supported');
         }
 
@@ -125,28 +154,49 @@ define([
 
         var result = queryFocusable({
           strategy: 'all',
-        });
-        var expected = '#tabindex--1, #tabindex-0, #tabindex-1'
-          + (supports.canFocusInvalidTabindex ? ', #tabindex-bad' : '')
-          + ', #link, #link-tabindex--1'
-          + ', #image-map-area'
-          + (supports.canFocusObjectSvg ? ', #object-svg, #object-tabindex-svg' : '')
-          + ', #svg-link'
-          + (supports.canFocusEmbed ? ', #embed' : '')
-          + (supports.canFocusEmbedTabindex ? ', #embed-tabindex-0' : '')
-          + (supports.canFocusEmbed && supports.canFocusObjectSvg ? ', #embed-svg' : '')
-          + (supports.canFocusEmbedTabindex && supports.canFocusObjectSvg ? ', #embed-tabindex-svg' : '')
-          + (supports.canFocusAudioWithoutControls ? ', #audio' : '')
-          + ', #audio-controls'
-          + ', #input, #input-tabindex--1'
-          + ', #input-disabled, #fieldset-disabled-input'
-          + ', #span-contenteditable'
-          + (document.body.style.webkitUserModify !== undefined ? ', #span-user-modify' : '')
-          + ', #img-ismap-link'
-          + (supports.canFocusScrollContainer ? ', #scroll-container' : '')
-          + ', #first-input, #second-input, #third-input';
+        }).map(fixture.nodeToString);
 
-        expect(elementsString(result)).to.equal(expected);
+        var expected = [
+          '#tabindex--1',
+          '#tabindex-0',
+          '#tabindex-1',
+          supports.canFocusInvalidTabindex && '#tabindex-bad',
+          '#link',
+          '#link-tabindex--1',
+          '#image-map-area',
+          '#image-map-area-nolink',
+          supports.canFocusRedirectImgUsemap && '#img-usemap',
+          supports.canFocusObjectSvg && '#object-svg',
+          supports.canFocusObjectSvg && '#object-tabindex-svg',
+          '#svg-link',
+          !supports.AVOID_QUICKTIME && '#embed',
+          !supports.AVOID_QUICKTIME && '#embed-tabindex-0',
+          '#embed-svg',
+          '#embed-tabindex-svg',
+          !supports.AVOID_MEDIA && supports.canFocusAudioWithoutControls && '#audio',
+          !supports.AVOID_MEDIA && '#audio-controls',
+          '#label',
+          '#input',
+          '#input-tabindex--1',
+          '#input-disabled',
+          '#fieldset-disabled-input',
+          '#span-contenteditable',
+          document.body.style.webkitUserModify !== undefined && '#span-user-modify',
+          '#img-ismap-link',
+          supports.canFocusScrollContainer && '#scroll-container',
+          supports.canFocusScrollContainer && '#div-section-overflow-scroll',
+          supports.canFocusScrollContainer && !supports.canFocusScrollBody && '#section-div-overflow-scroll',
+          supports.canFocusScrollBody && '#section-div-overflow-scroll-body',
+          supports.canFocusFlexboxContainer && '#flexbox-container',
+          supports.canFocusFlexboxContainer && '#flexbox-container-child',
+          '#focusable-flexbox',
+          supports.canFocusChildrenOfFocusableFlexbox && '#focusable-flexbox-child',
+          '#first-input',
+          '#second-input',
+          '#third-input',
+        ].filter(Boolean);
+
+        expect(result).to.deep.equal(expected);
       },
     };
   });

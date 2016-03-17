@@ -21,7 +21,7 @@ define([
             '</div>',
           '</div>',
           /*eslint-enable indent */
-        ].join(''));
+        ]);
 
         fixture.outer = document.getElementById('outer');
         fixture.inner = document.getElementById('inner');
@@ -117,6 +117,7 @@ define([
             }
 
             deferred.resolve();
+            return true;
           }),
         });
 

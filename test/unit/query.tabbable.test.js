@@ -2,11 +2,10 @@ define([
   'intern!object',
   'intern/chai!expect',
   '../helper/fixtures/focusable.fixture',
-  '../helper/elements-string',
-  'platform',
+  'ally/util/platform',
   '../helper/supports',
   'ally/query/tabbable',
-], function(registerSuite, expect, focusableFixture, elementsString, platform, supports, queryTabbable) {
+], function(registerSuite, expect, focusableFixture, platform, supports, queryTabbable) {
 
   registerSuite(function() {
     var fixture;
@@ -16,10 +15,6 @@ define([
 
       beforeEach: function() {
         fixture = focusableFixture();
-        // remove elements from tabbing test, because their behavior is undefined
-        [].forEach.call(document.querySelectorAll('#embed, #embed-tabindex-0, #embed-svg'), function(element) {
-          element.parentNode.removeChild(element);
-        });
       },
       afterEach: function() {
         fixture.remove();
@@ -29,40 +24,77 @@ define([
       document: function() {
         var deferred = this.async(10000);
 
-        var expected = '#tabindex-0, #tabindex-1, #link'
-          + ', #image-map-area'
-          + (platform.name === 'Firefox' ? ', #object-svg' : '')
-          + (supports.canFocusSvgMethod ? ', #svg-link' : '')
-          + ', #audio-controls'
-          + ', #input, #span-contenteditable'
-          + ', #img-ismap-link';
+        var expected = [
+          !platform.is.IOS && '#tabindex-0',
+          !platform.is.IOS && '#tabindex-1',
+          !platform.is.IOS && '#link',
+          !platform.is.IOS && '#image-map-area',
+          !platform.is.IOS && platform.is.GECKO && '#object-svg',
+          !platform.is.IOS && supports.svgFocusMethod && '#svg-link',
+          !platform.is.IOS && '#audio-controls',
+          '#input',
+          '#span-contenteditable',
+          !platform.is.IOS && '#img-ismap-link',
+        ].filter(Boolean);
 
         // NOTE: Firefox decodes DataURIs asynchronously
         setTimeout(deferred.callback(function() {
-          var result = queryTabbable();
-          expect(elementsString(result)).to.equal(expected);
+          var result = queryTabbable().map(fixture.nodeToString);
+          expect(result).to.deep.equal(expected);
+        }), 200);
+      },
+
+      includeOnlyTabbable: function() {
+        var deferred = this.async(10000);
+
+        var expected = [
+          !platform.is.IOS && '#tabindex-0',
+          !platform.is.IOS && '#tabindex-1',
+          !platform.is.IOS && '#link',
+          !platform.is.IOS && '#image-map-area',
+          !platform.is.IOS && platform.is.GECKO && '#object-svg',
+          !platform.is.IOS && '#svg-link',
+          !platform.is.IOS && '#audio-controls',
+          '#input',
+          '#span-contenteditable',
+          !platform.is.IOS && '#img-ismap-link',
+        ].filter(Boolean);
+
+        // NOTE: Firefox decodes DataURIs asynchronously
+        setTimeout(deferred.callback(function() {
+          var result = queryTabbable({
+            includeOnlyTabbable: true,
+          }).map(fixture.nodeToString);
+
+          expect(result).to.deep.equal(expected);
         }), 200);
       },
 
       context: function() {
-        var expected = '#link';
+        var expected = [
+          !platform.is.IOS && '#link',
+        ].filter(Boolean);
+
         var result = queryTabbable({
           context: '.context',
-        });
+        }).map(fixture.nodeToString);
 
-        expect(elementsString(result)).to.equal(expected);
+        expect(result).to.deep.equal(expected);
       },
 
       'context and self': function() {
         fixture.root.querySelector('.context').setAttribute('tabindex', '-1');
 
-        var expected = '#link';
+        var expected = [
+          !platform.is.IOS && '#link',
+        ].filter(Boolean);
+
         var result = queryTabbable({
           context: '.context',
           includeContext: true,
-        });
+        }).map(fixture.nodeToString);
 
-        expect(elementsString(result)).to.equal(expected);
+        expect(result).to.deep.equal(expected);
       },
     };
   });

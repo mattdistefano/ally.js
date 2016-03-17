@@ -29,7 +29,17 @@ define([
       invalid: function() {
         expect(function() {
           isFocusable(null);
-        }).to.throw(TypeError, 'is/focusable requires an argument of type Element');
+        }).to.throw(TypeError, 'is/focusable requires valid options.context');
+        expect(function() {
+          isFocusable([true]);
+        }).to.throw(TypeError, 'is/focusable requires options.context to be an Element');
+      },
+      '.rules() and .except()': function() {
+        var element = document.getElementById('inert-div');
+        expect(isFocusable.rules({
+          context: element,
+        })).to.equal(false, '.rules()');
+        expect(isFocusable.rules.except({})(element)).to.equal(false, '.rules.except()');
       },
       'inert div': function() {
         var element = document.getElementById('inert-div');
@@ -113,6 +123,19 @@ define([
         var element = document.getElementById('audio-controls');
         expect(isFocusable(element)).to.equal(true);
       },
+      'svg link': function() {
+        var element = document.getElementById('svg-link');
+        expect(isFocusable(element)).to.equal(supports.svgFocusMethod);
+      },
+      'svg link with .except({ onlyTabbable })': function() {
+        var element = document.getElementById('svg-link');
+        expect(isFocusable.rules({
+          context: element,
+          except: {
+            onlyTabbable: true,
+          },
+        })).to.equal(true);
+      },
       'extended: CSS user-modify': function() {
         var _supports = document.body.style.webkitUserModify !== undefined;
         var element = document.getElementById('span-user-modify');
@@ -135,14 +158,44 @@ define([
         expect(isFocusable(element)).to.equal(supports.canFocusScrollBody);
       },
       'extended: child of focusable flexbox': function() {
-        var span = fixture.add([
+        var element = fixture.add([
           /*eslint-disable indent */
-          '<div tabindex="-1" style="display: -ms-flexbox; display: flex;">',
+          '<div tabindex="-1" style="display: -webkit-flex; display: -ms-flexbox; display: flex;">',
             '<span style="display: block;">hello</span>',
           '</div>',
           /*eslint-enable indent */
         ]).firstElementChild.firstElementChild;
-        expect(isFocusable(span)).to.equal(supports.canFocusChildrenOfFocusableFlexbox);
+        expect(isFocusable(element)).to.equal(supports.canFocusChildrenOfFocusableFlexbox);
+      },
+      'extended: Shadow DOM host': function() {
+        if (document.body.createShadowRoot === undefined) {
+          this.skip('Shadow DOM not supported');
+        }
+
+        var element = fixture.add([
+          /*eslint-disable indent */
+          '<div></div>',
+          /*eslint-enable indent */
+        ]).firstElementChild;
+        var root = element.createShadowRoot();
+        root.innerHTML = '<input>';
+
+        expect(isFocusable(element)).to.equal(false);
+      },
+      'extended: Shadow DOM host with tabindex': function() {
+        if (document.body.createShadowRoot === undefined) {
+          this.skip('Shadow DOM not supported');
+        }
+
+        var element = fixture.add([
+          /*eslint-disable indent */
+          '<div tabindex="-1"></div>',
+          /*eslint-enable indent */
+        ]).firstElementChild;
+        var root = element.createShadowRoot();
+        root.innerHTML = '<input>';
+
+        expect(isFocusable(element)).to.equal(true);
       },
     };
   });

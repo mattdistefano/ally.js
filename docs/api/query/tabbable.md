@@ -21,7 +21,7 @@ Consult the data tables [what browsers consider focusable](../../data-tables/foc
 var elements = ally.query.tabbable({
   context: '.within-filter-selector',
   includeContext: true,
-  strategy: "quick",
+  strategy: 'quick',
 });
 ```
 
@@ -31,6 +31,7 @@ var elements = ally.query.tabbable({
 | ---- | ---- | ------- | ----------- |
 | context | [`<selector>`](../concepts.md#Selector) | [`documentElement`](https://developer.mozilla.org/en-US/docs/Web/API/Document/documentElement) | The scope of the DOM in which to search. The first element of a collection is used. |
 | includeContext | boolean | `false` | Prepend the `context` element if it is focusable. |
+| includeOnlyTabbable | boolean | `false` | Include elements that would otherwise be ignored because they're considered only tabbable, |
 | strategy | `"quick"`, `"strict"`, `"all"` | `"quick"` | The approach used to find elements. |
 
 ### Returns
@@ -46,6 +47,11 @@ Array of [`HTMLElement`](https://developer.mozilla.org/en/docs/Web/API/HTMLEleme
 * **EXAMPLE:** [`ally.query.focusable` Example](./focusable.example.html)
 
 
+## Changes
+
+* Since `v1.1.0` the option `includeOnlyTabbable` allows to skip the internal filter preventing this module from returning elements that cannot be focused by script.
+
+
 ## Notes
 
 See [`ally.is.focusRelevant`](../is/focus-relevant.md#Notes)
@@ -55,8 +61,8 @@ See [`ally.is.focusRelevant`](../is/focus-relevant.md#Notes)
 
 * [`ally.is.tabbable`](../is/tabbable.md) is used to filter focusable elements
 * [`ally.query.focusable`](focusable.md) is used to find focusable elements
-* [`ally.query.firstTabbable`](tabbable.md) finds the first keyboard focusable element in a context
-* [`ally.query.tabsequence`](tabbable.md) finds keyboard focusable elements in the [Sequential Navigation Focus Order](../../concepts.md#Sequential-navigation-focus-order)
+* [`ally.query.firstTabbable`](first-tabbable.md) finds the first keyboard focusable element in a context
+* [`ally.query.tabsequence`](tabbable.md) finds keyboard focusable elements in [Sequential Navigation Focus Order](../../concepts.md#Sequential-navigation-focus-order)
 
 
 ## Contributing

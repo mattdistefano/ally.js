@@ -24,13 +24,14 @@
   Alternate implementation: https://github.com/alice/modality
 */
 
+import 'domtokenlist-shim/dist/domtokenlist-polyfill-umd';
 import shadowFocus from '../event/shadow-focus';
 import engageInteractionTypeObserver from '../observe/interaction-type';
 import decorateService from '../util/decorate-service';
 
 // preferring focusin/out because they are synchronous in IE10+11
-const focusEventName = 'onfocusin' in document ? 'focusin' : 'focus';
-const blurEventName = 'onfocusin' in document ? 'focusout' : 'blur';
+const focusEventName = typeof document !== 'undefined' && ('onfocusin' in document ? 'focusin' : 'focus');
+const blurEventName = typeof document !== 'undefined' && ('onfocusin' in document ? 'focusout' : 'blur');
 
 // interface to read interaction-type-listener state
 let interactionTypeHandler;

@@ -8,15 +8,19 @@
     style/focus-within()
 */
 
+import 'domtokenlist-shim/dist/domtokenlist-polyfill-umd';
 import shadowFocus from '../event/shadow-focus';
-import cssShadowPiercingDeepCombinator from '../supports/css-shadow-piercing-deep-combinator';
 import getActiveElements from '../get/active-elements';
 import getParents from '../get/parents';
 import decorateService from '../util/decorate-service';
+import selectInShadows from '../util/select-in-shadows';
+
+import _supports from './focus-within.supports';
+let supports;
 
 // preferring focusin/out because they are synchronous in IE10+11
-const focusEventName = 'onfocusin' in document ? 'focusin' : 'focus';
-const blurEventName = 'onfocusin' in document ? 'focusout' : 'blur';
+const focusEventName = typeof document !== 'undefined' && ('onfocusin' in document ? 'focusin' : 'focus');
+const blurEventName = typeof document !== 'undefined' && ('onfocusin' in document ? 'focusout' : 'blur');
 
 // NOTE: require classList polyfill may be necessary (not available on SVGElement)
 // http://caniuse.com/#feat=classlist available since IE10
@@ -24,16 +28,14 @@ const blurEventName = 'onfocusin' in document ? 'focusout' : 'blur';
 // https://developer.mozilla.org/en-US/docs/Web/API/Element.classList
 
 const className = 'ally-focus-within';
+// defined in engage();
+let selector;
 let blurTimer;
 let shadowHandle;
 
 function applyFocusWithinClass(active) {
   let _active = active || getActiveElements();
-  let selector = '.' + className;
-  if (cssShadowPiercingDeepCombinator) {
-    // select elements in shadow dom as well
-    selector += ', html ' + cssShadowPiercingDeepCombinator + ' ' + selector;
-  } else {
+  if (!supports.cssShadowPiercingDeepCombinator) {
     // no shadow-piercing descendant selector, no joy
     _active = _active.slice(-1);
   }
@@ -51,7 +53,7 @@ function applyFocusWithinClass(active) {
       return;
     }
 
-    element.classList.remove(className);
+    element.classList && element.classList.remove(className);
   });
 
   // apply the class only to elements that do not yet have it (minimize dom action)
@@ -60,7 +62,7 @@ function applyFocusWithinClass(active) {
       return;
     }
 
-    element.classList.add(className);
+    element.classList && element.classList.add(className);
   });
 }
 
@@ -93,12 +95,6 @@ function disengage() {
   document.removeEventListener(focusEventName, handleDocumentFocusEvent, true);
   document.removeEventListener('shadow-focus', handleShadowFocusEvent, true);
 
-  let selector = '.' + className;
-  if (cssShadowPiercingDeepCombinator) {
-    // select elements in shadow dom as well
-    selector += ', html ' + cssShadowPiercingDeepCombinator + ' ' + selector;
-  }
-
   // remove any remaining ally-within-focus occurrences
   [].forEach.call(document.querySelectorAll(selector), function(element) {
     element.classList.remove(className);
@@ -106,6 +102,11 @@ function disengage() {
 }
 
 function engage() {
+  if (!supports) {
+    supports = _supports();
+    selector = selectInShadows('.' + className);
+  }
+
   shadowHandle = shadowFocus();
   document.addEventListener(blurEventName, handleDocumentBlurEvent, true);
   document.addEventListener(focusEventName, handleDocumentFocusEvent, true);

@@ -1,23 +1,40 @@
 
 // Determine if an element supports the disabled attribute
 
-import canFocusDisabledFieldset from '../supports/focus-fieldset-disabled';
+import contextToElement from '../util/context-to-element';
+import _supports from './native-disabled-supported.supports';
+let supports;
 
 // http://www.w3.org/TR/html5/disabled-elements.html#concept-element-disabled
-let disabledElementsPattern = /^(input|select|textarea|button|fieldset)$/;
+let disabledElementsPattern;
+const disabledElements = {
+  input: true,
+  select: true,
+  textarea: true,
+  button: true,
+  fieldset: true,
+  form: true,
+};
 
-// fieldset[tabindex=0][disabled] should not be focusable, but Blink and WebKit disagree
-// @specification http://www.w3.org/TR/html5/disabled-elements.html#concept-element-disabled
-// @browser-issue Chromium https://crbug.com/453847
-// @browser-issue WebKit https://bugs.webkit.org/show_bug.cgi?id=141086
-if (canFocusDisabledFieldset) {
-  disabledElementsPattern = /^(input|select|textarea|button)$/;
-}
+export default function(context) {
+  if (!supports) {
+    supports = _supports();
 
-export default function(element) {
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
-    throw new TypeError('is/native-disabled-supported requires an argument of type Element');
+    if (supports.canFocusDisabledFieldset) {
+      delete disabledElements.fieldset;
+    }
+
+    if (supports.canFocusDisabledForm) {
+      delete disabledElements.form;
+    }
+
+    disabledElementsPattern = new RegExp('^(' + Object.keys(disabledElements).join('|') + ')$');
   }
+
+  const element = contextToElement({
+    label: 'is/native-disabled-supported',
+    context,
+  });
 
   const nodeName = element.nodeName.toLowerCase();
   return Boolean(disabledElementsPattern.test(nodeName));

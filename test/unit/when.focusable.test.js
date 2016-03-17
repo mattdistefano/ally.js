@@ -21,7 +21,7 @@ define([
             '</div>',
           '</div>',
           /*eslint-enable indent */
-        ].join(''));
+        ]);
 
         fixture.outer = document.getElementById('outer');
         fixture.inner = document.getElementById('inner');
@@ -56,7 +56,7 @@ define([
           handle = whenFocusable({
             callback: function() {},
           });
-        }).to.throw(TypeError, 'when/visible-area requires valid options.context');
+        }).to.throw(TypeError, 'when/focusable requires valid options.context');
       },
       'visible initially': function() {
         var deferred = this.async(10000);
@@ -117,6 +117,7 @@ define([
             }
 
             deferred.resolve();
+            return true;
           }),
         });
 

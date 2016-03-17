@@ -2,14 +2,41 @@ define([
   'intern!object',
   'intern/chai!expect',
   '../helper/fixtures/custom.fixture',
+  '../helper/supports',
+  '../helper/test-frame',
   'ally/is/visible',
-], function(registerSuite, expect, customFixture, isVisible) {
+  'ally/supports/media/mp3',
+], function(registerSuite, expect, customFixture, supports, TestFrame, isVisible, mp3) {
 
   registerSuite(function() {
     var fixture;
+    var frame;
 
     return {
       name: 'is/visible',
+
+      before: function() {
+        frame = new TestFrame([
+          /*eslint-disable indent */
+          '<!DOCTYPE html>',
+          '<html lang="en">',
+            '<head>',
+              '<meta charset="utf-8" />',
+              '<title>Framed Content</title>',
+            '</head>',
+            '<body>',
+              '<p id="target">Hello World</p>',
+            '</body>',
+          '</html>',
+          /*eslint-enable indent */
+        ].join(''));
+
+        return frame.initialize(document.body);
+      },
+      after: function() {
+        frame.terminate();
+        frame = null;
+      },
 
       beforeEach: function() {
         fixture = customFixture([
@@ -52,12 +79,12 @@ define([
             '<area id="disconnected-area" href="#void" shape="rect" coords="63,19,144,45">',
           '</map>',
           // unknown dimension elements
-          '<audio id="unknown-dimension-audio" controls src="data:audio/mp3;base64,audio"></audio>',
+          (!supports.AVOID_MEDIA && '<audio id="unknown-dimension-audio" controls src="' + mp3 + '"></audio>') || '',
           // details/summary
           '<details id="details-closed"><summary id="summary"></summary> <a href="#void" id="details-closed-link">link</a></details>',
           '<details id="details-open" open><summary id="summary"></summary> <a href="#void" id="details-open-link">link</a></details>',
           /*eslint-enable indent */
-        ].join(''));
+        ]);
       },
       afterEach: function() {
         fixture.remove();
@@ -67,7 +94,17 @@ define([
       invalid: function() {
         expect(function() {
           isVisible(null);
-        }).to.throw(TypeError, 'is/visible requires an argument of type Element');
+        }).to.throw(TypeError, 'is/visible requires valid options.context');
+        expect(function() {
+          isVisible([true]);
+        }).to.throw(TypeError, 'is/visible requires options.context to be an Element');
+      },
+      '.rules() and .except()': function() {
+        var element = document.getElementById('visible-div');
+        expect(isVisible.rules({
+          context: element,
+        })).to.equal(true, '.rules()');
+        expect(isVisible.rules.except({})(element)).to.equal(true, '.rules.except()');
       },
       div: function() {
         var element = document.getElementById('visible-div');
@@ -92,8 +129,8 @@ define([
       'HTML5 closed details element children': function() {
         var container = document.getElementById('details-closed');
         var element = document.getElementById('details-closed-link');
-        var supports = container.open === undefined;
-        expect(isVisible(element)).to.equal(supports);
+        var _supports = container.open === undefined;
+        expect(isVisible(element)).to.equal(_supports);
       },
       'HTML5 open details element children': function() {
         var container = document.getElementById('details-open');
@@ -147,6 +184,16 @@ define([
       'unknown dimension: audio element': function() {
         var element = document.getElementById('unknown-dimension-audio');
         expect(isVisible(element)).to.equal(true);
+      },
+      'within visible <iframe>': function() {
+        var element = frame.document.getElementById('target');
+        frame.element.style.display = '';
+        expect(isVisible(element)).to.equal(true);
+      },
+      'within hidden <iframe>': function() {
+        var element = frame.document.getElementById('target');
+        frame.element.style.display = 'none';
+        expect(isVisible(element)).to.equal(false);
       },
     };
   });

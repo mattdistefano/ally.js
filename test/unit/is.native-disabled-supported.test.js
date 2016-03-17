@@ -24,7 +24,7 @@ define([
           '<fieldset id="non-disabled-fieldset" tabindex="-1"></fieldset>',
           '<fieldset id="disabled-fieldset" tabindex="-1" disabled></fieldset>',
           /*eslint-enable indent */
-        ].join(''));
+        ]);
       },
       afterEach: function() {
         fixture.remove();
@@ -34,7 +34,7 @@ define([
       invalid: function() {
         expect(function() {
           isNativeDisabledSupported(null);
-        }).to.throw(TypeError, 'is/native-disabled-supported requires an argument of type Element');
+        }).to.throw(TypeError, 'is/native-disabled-supported requires valid options.context');
       },
       'non-input': function() {
         var element = document.getElementById('non-input');

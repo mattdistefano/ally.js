@@ -21,7 +21,9 @@ This *Browser Bug Workaround* targets an issue in Safari and Firefox **on Mac OS
 var handle = ally.fix.pointerFocusInput();
 // disengage the workaround
 handle.disengage();
+```
 
+```js
 // engage the workaround only for a sub-tree
 var handle = ally.fix.pointerFocusInput({
   context: '#element-to-fix',
@@ -44,6 +46,11 @@ A [`<service>`](../concepts.md#Service) interface, providing the `handle.disenga
 ## Examples
 
 * **EXAMPLE:** [`ally.fix.pointerFocusInput` Example](./pointer-focus-input.example.html)
+
+
+## Changes
+
+* Since `v1.1.0` nested elements of `<button>` and `<label>` are targeted properly.
 
 
 ## Notes

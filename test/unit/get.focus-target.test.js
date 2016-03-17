@@ -2,8 +2,9 @@ define([
   'intern!object',
   'intern/chai!expect',
   '../helper/fixtures/custom.fixture',
+  '../helper/supports',
   'ally/get/focus-target',
-], function(registerSuite, expect, customFixture, getFocusTarget) {
+], function(registerSuite, expect, customFixture, supports, getFocusTarget) {
 
   registerSuite(function() {
     var fixture;
@@ -26,8 +27,13 @@ define([
           '<div data-label="none-outer">',
             '<span id="none" data-label="none-inner">nested</span>',
           '</div>',
+          '<label id="label-nested">label <input id="label-nested-target"></label>',
+          '<div id="flexbox-container" tabindex="-1" ',
+            'style="display: -webkit-flexbox; display: -ms-flexbox; display: flex; width: 300px;">',
+            '<div id="flexbox-child">flexed</span>',
+          '</div>',
           /*eslint-enable indent */
-        ].join(''));
+        ]);
       },
       afterEach: function() {
         fixture.remove();
@@ -66,6 +72,24 @@ define([
         });
 
         expect(target).to.equal(null);
+      },
+      'label redirect': function() {
+        var target = getFocusTarget({
+          context: '#label-nested',
+        });
+
+        expect(target.id).to.equal('label-nested-target');
+      },
+      'flexbox parent': function() {
+        var target = getFocusTarget({
+          context: '#flexbox-child',
+          except: {
+            flexbox: true,
+            scrollable: true,
+          },
+        });
+
+        expect(target.id).to.equal('flexbox-container');
       },
     };
   });

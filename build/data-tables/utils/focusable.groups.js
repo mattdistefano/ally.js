@@ -5,6 +5,8 @@ const file = path.resolve(cwd, 'tests/focusable/data/meta.groups.json');
 const source = require(file);
 
 const idents = new Set();
+const inertQueryIdents = new Set();
+const inertIsIdents = new Set();
 source.forEach(function(group) {
   // add a key to be used for referencing the group in a data-table
   group.id = group.label.replace(/[^a-z0-9]+/ig, '-').toLowerCase();
@@ -16,6 +18,15 @@ source.forEach(function(group) {
   // (but keep them in the idents set so we don't add them to "elements without group" later)
   group.irrelevant && group.irrelevant.forEach(function(ident) {
     delete group.idents[ident];
+  });
+
+  // remember entries that have no detail relevance
+  // to the ally comparison tables
+  group['inert-in-ally-query'] && group['inert-in-ally-query'].forEach(function(ident) {
+    inertQueryIdents.add(ident);
+  });
+  group['inert-in-ally-is'] && group['inert-in-ally-is'].forEach(function(ident) {
+    inertIsIdents.add(ident);
   });
 
   // create lookup table for redundant entries
@@ -35,6 +46,13 @@ function identsToUnknownGroup(_idents) {
     return;
   }
 
+  // warning: logs a lot of inert elements
+  // identsWithoutGroup.forEach(function(key) {
+  //   /*eslint-disable no-console */
+  //   console.warn('no group for "' + key + '"');
+  //   /*eslint-enable no-console */
+  // });
+
   source.unshift({
     label: 'Elements Without Group',
     idents: identsWithoutGroup,
@@ -47,4 +65,8 @@ module.exports = {
   idents,
   list: source,
   handleIdentsWithoutGroup: identsToUnknownGroup,
+  inertIdents: {
+    query: inertQueryIdents,
+    is: inertIsIdents,
+  },
 };

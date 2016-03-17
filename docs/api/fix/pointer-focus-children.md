@@ -37,7 +37,9 @@ Considering the following markup, clicking on one of the `<span>` elements would
 var handle = ally.fix.pointerFocusChildren();
 // disengage the workaround
 handle.disengage();
+```
 
+```js
 // engage the workaround only for a sub-tree
 var handle = ally.fix.pointerFocusChildren({
   context: '#element-to-fix',
@@ -60,6 +62,11 @@ A [`<service>`](../concepts.md#Service) interface, providing the `handle.disenga
 ## Examples
 
 * **EXAMPLE:** [`ally.fix.pointerFocusChildren` Example](./pointer-focus-children.example.html)
+
+
+## Changes
+
+* Since `v1.1.0` the module is executed on `mousdown` instead of `pointerdown`.
 
 
 ## Notes

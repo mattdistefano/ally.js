@@ -1,50 +1,51 @@
 
-// determine if an element can be focused by script regardless
+// determine if an element supports.can be focused by script regardless
 // of the element actually being focusable at the time of execution
 // i.e. <input disabled> is conisdered focus-relevant, but not focusable
 
-import '../prototype/svgelement.prototype.focus';
-import '../prototype/element.prototype.matches';
+import polyfillElementPrototypeMatches from '../prototype/element.prototype.matches';
+import polyfillSVGElementPrototypeFocus from '../prototype/svgelement.prototype.focus';
 import getParents from '../get/parents';
+import contextToElement from '../util/context-to-element';
+import getWindow from '../util/get-window';
 import isValidTabindex from './valid-tabindex';
-import isValidArea from './valid-area';
 import {
   hasCssOverflowScroll,
+  hasCssDisplayFlex,
   isScrollableContainer,
   isUserModifyWritable,
 } from './is.util';
 
-import canFocusAreaTabindex from '../supports/focus-area-tabindex';
-import canFocusAudioWithoutControls from '../supports/focus-audio-without-controls';
-import canFocusChildrenOfFocusableFlexbox from '../supports/focus-children-of-focusable-flexbox';
-import canFocusEmbed from '../supports/focus-embed';
-import canFocusEmbedTabindex from '../supports/focus-embed-tabindex';
-import canFocusFieldset from '../supports/focus-fieldset';
-import canFocusImgIsmap from '../supports/focus-img-ismap';
-import canFocusImgUsemapTabindex from '../supports/focus-img-usemap-tabindex';
-import canFocusLabelTabindex from '../supports/focus-label-tabindex';
-import canFocusObjectSvg from '../supports/focus-object-svg';
-import canFocusScrollBody from '../supports/focus-scroll-body';
-import canFocusScrollContainer from '../supports/focus-scroll-container';
-import canFocusScrollContainerWithoutOverflow from '../supports/focus-scroll-container-without-overflow';
-import canFocusSummary from '../supports/focus-summary';
-import canFocusSvgMethod from '../supports/svg-focus-method';
-import canFocusTable from '../supports/focus-table';
-import canFocusVideoWithoutControls from '../supports/focus-video-without-controls';
+import _supports from './focus-relevant.supports';
+let supports;
 
-export default function(element) {
-  if (element === document) {
-    element = document.documentElement;
+function isFocusRelevantRules({
+  context,
+  except = {
+    flexbox: false,
+    scrollable: false,
+    shadow: false,
+  },
+} = {}) {
+  if (!supports) {
+    supports = _supports();
   }
 
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
-    throw new TypeError('is/focus-relevant requires an argument of type Element');
+  const element = contextToElement({
+    label: 'is/focus-relevant',
+    resolveDocument: true,
+    context,
+  });
+
+  if (!except.shadow && element.shadowRoot) {
+    // a Shadow DOM host receives focus when the focus moves to its content
+    return true;
   }
 
   const nodeName = element.nodeName.toLowerCase();
 
   if (nodeName === 'input' && element.type === 'hidden') {
-    // input[type="hidden"] cannot be focused
+    // input[type="hidden"] supports.cannot be focused
     return false;
   }
 
@@ -52,21 +53,19 @@ export default function(element) {
     return true;
   }
 
-  if (nodeName === 'label' && !canFocusLabelTabindex) {
-    // <label tabindex="0"> is only tabbable in Firefox, not script-focusable
-    // there's no way to make an element focusable other than by adding a tabindex,
-    // and focus behavior of the label element seems hard-wired to ignore tabindex
-    // in some browsers (like Gecko, Blink and WebKit)
-    return false;
+  if (nodeName === 'legend' && supports.canFocusRedirectLegend) {
+    // specifics filtered in is/focusable
+    return true;
+  }
+
+  if (nodeName === 'label') {
+    // specifics filtered in is/focusable
+    return true;
   }
 
   if (nodeName === 'area') {
-    if (!canFocusAreaTabindex && element.hasAttribute('tabindex')) {
-      // Blink and WebKit do not consider <area tabindex="-1" href="#void"> focusable
-      return false;
-    }
-
-    return isValidArea(element);
+    // specifics filtered in is/focusable
+    return true;
   }
 
   if (nodeName === 'a' && element.hasAttribute('href')) {
@@ -78,9 +77,15 @@ export default function(element) {
     return false;
   }
 
-  if (!canFocusObjectSvg && nodeName === 'object' && element.getAttribute('type') === 'image/svg+xml') {
-    // object[type="image/svg+xml"] is not focusable in Internet Explorer
-    return false;
+  if (nodeName === 'object') {
+    const svgType = element.getAttribute('type');
+    if (!supports.canFocusObjectSvg && svgType === 'image/svg+xml') {
+      // object[type="image/svg+xml"] is not focusable in Internet Explorer
+      return false;
+    } else if (!supports.canFocusObjectSwf && svgType === 'application/x-shockwave-flash') {
+      // object[type="application/x-shockwave-flash"] is not focusable in Internet Explorer 9
+      return false;
+    }
   }
 
   if (nodeName === 'iframe' || nodeName === 'object') {
@@ -88,14 +93,10 @@ export default function(element) {
     return true;
   }
 
-  const validTabindex = isValidTabindex(element);
-
-  if (nodeName === 'embed') {
-    if (canFocusEmbed || (canFocusEmbedTabindex && validTabindex)) {
-      return true;
-    }
-
-    return false;
+  if (nodeName === 'embed' || nodeName === 'keygen') {
+    // embed is considered focus-relevant but not focusable
+    // see https://github.com/medialize/ally.js/issues/82
+    return true;
   }
 
   if (element.hasAttribute('contenteditable')) {
@@ -103,47 +104,54 @@ export default function(element) {
     return true;
   }
 
-  if (nodeName === 'audio' && (canFocusAudioWithoutControls || element.hasAttribute('controls'))) {
+  if (nodeName === 'audio' && (supports.canFocusAudioWithoutControls || element.hasAttribute('controls'))) {
     return true;
   }
 
-  if (nodeName === 'video' && (canFocusVideoWithoutControls || element.hasAttribute('controls'))) {
+  if (nodeName === 'video' && (supports.canFocusVideoWithoutControls || element.hasAttribute('controls'))) {
     return true;
   }
 
-  if (canFocusSummary && nodeName === 'summary') {
+  if (supports.canFocusSummary && nodeName === 'summary') {
     return true;
   }
 
-  if (nodeName === 'img' && element.hasAttribute('usemap') && validTabindex) {
+  const validTabindex = isValidTabindex(element);
+
+  if (nodeName === 'img' && element.hasAttribute('usemap')) {
     // Gecko, Trident and Edge do not allow an image with an image map and tabindex to be focused,
     // it appears the tabindex is overruled so focus is still forwarded to the <map>
-    return canFocusImgUsemapTabindex;
+    return validTabindex && supports.canFocusImgUsemapTabindex || supports.canFocusRedirectImgUsemap;
   }
 
-  if (canFocusTable && (nodeName === 'table' || nodeName === 'td')) {
-    // IE10-11 can focus <table> and <td>
+  if (supports.canFocusTable && (nodeName === 'table' || nodeName === 'td')) {
+    // IE10-11 supports.can focus <table> and <td>
     return true;
   }
 
-  if (canFocusFieldset && nodeName === 'fieldset') {
-    // IE10-11 can focus <fieldset>
+  if (supports.canFocusFieldset && nodeName === 'fieldset') {
+    // IE10-11 supports.can focus <fieldset>
     return true;
   }
+
+  const focusableAttribute = element.getAttribute('focusable');
 
   if (nodeName === 'svg') {
-    if (!canFocusSvgMethod) {
-      // Firefox and IE cannot focus SVG elements because SVGElement.prototype.focus is missing
-      return false;
-    }
-    // NOTE: in Chrome this would be something like 'svg, svg *,' as *every* svg element with a focus event listener is focusable
-    return validTabindex;
+    return validTabindex || supports.canFocusSvg
+      // Internet Explorer understands the focusable attribute introduced in SVG Tiny 1.2
+      || Boolean(supports.canFocusSvgFocusableAttribute && focusableAttribute && focusableAttribute === 'true');
   }
 
-  if (element.matches('svg a[*|href]')) {
-    // Namespace problems of [xlink:href] explained in http://stackoverflow.com/a/23047888/515124
-    // Firefox cannot focus <svg> child elements from script
-    return canFocusSvgMethod;
+  const _window = getWindow(element);
+  polyfillElementPrototypeMatches(_window);
+  if (element.matches('svg a') && element.hasAttribute('xlink:href')) {
+    return true;
+  }
+
+  polyfillSVGElementPrototypeFocus(_window);
+  if (supports.canFocusSvgFocusableAttribute && element.ownerSVGElement) {
+    // Internet Explorer understands the focusable attribute introduced in SVG Tiny 1.2
+    return Boolean(focusableAttribute && focusableAttribute === 'true');
   }
 
   // http://www.w3.org/TR/html5/editing.html#sequential-focus-navigation-and-the-tabindex-attribute
@@ -156,7 +164,7 @@ export default function(element) {
     return true;
   }
 
-  if (canFocusImgIsmap && nodeName === 'img' && element.hasAttribute('ismap')) {
+  if (supports.canFocusImgIsmap && nodeName === 'img' && element.hasAttribute('ismap')) {
     // IE10-11 considers the <img> in <a href><img ismap> focusable
     // https://github.com/medialize/ally.js/issues/20
     const hasLinkParent = getParents({context: element}).some(
@@ -169,8 +177,8 @@ export default function(element) {
   }
 
   // https://github.com/medialize/ally.js/issues/21
-  if (canFocusScrollContainer) {
-    if (canFocusScrollContainerWithoutOverflow) {
+  if (!except.scrollable && supports.canFocusScrollContainer) {
+    if (supports.canFocusScrollContainerWithoutOverflow) {
       // Internet Explorer does will consider the scrollable area focusable
       // if the element is a <div> or a <span> and it is in fact scrollable,
       // regardless of the CSS overflow property
@@ -184,18 +192,24 @@ export default function(element) {
     }
   }
 
+  if (!except.flexbox && supports.canFocusFlexboxContainer && hasCssDisplayFlex(style)) {
+    // elements with display:flex are focusable in IE10-11
+    return true;
+  }
+
   const parent = element.parentElement;
-  if (parent) {
-    if (canFocusScrollBody && isScrollableContainer(parent, nodeName)) {
+  if (!except.scrollable && parent) {
+    const parentNodeName = parent.nodeName.toLowerCase();
+    const parentStyle = window.getComputedStyle(parent, null);
+    if (supports.canFocusScrollBody && isScrollableContainer(parent, nodeName, parentNodeName, parentStyle)) {
       // scrollable bodies are focusable Internet Explorer
       // https://github.com/medialize/ally.js/issues/21
       return true;
     }
 
     // Children of focusable elements with display:flex are focusable in IE10-11
-    if (canFocusChildrenOfFocusableFlexbox) {
-      const parentStyle = window.getComputedStyle(parent, null);
-      if (parentStyle.display.indexOf('flex') > -1) {
+    if (supports.canFocusChildrenOfFocusableFlexbox) {
+      if (hasCssDisplayFlex(parentStyle)) {
         return true;
       }
     }
@@ -207,3 +221,20 @@ export default function(element) {
 
   return false;
 }
+
+// bind exceptions to an iterator callback
+isFocusRelevantRules.except = function(except = {}) {
+  const isFocusRelevant = function(context) {
+    return isFocusRelevantRules({
+      context,
+      except,
+    });
+  };
+
+  isFocusRelevant.rules = isFocusRelevantRules;
+  return isFocusRelevant;
+};
+
+// provide isFocusRelevant(context) as default iterator callback
+const isFocusRelevant = isFocusRelevantRules.except({});
+export default isFocusRelevant;

@@ -5,27 +5,35 @@
 
 import whenVisibleArea from './visible-area';
 import isFocusable from '../is/focusable';
+import contextToElement from '../util/context-to-element';
+import getDocument from '../util/get-document';
 
 export default function({context, callback, area} = {}) {
   if (typeof callback !== 'function') {
     throw new TypeError('when/focusable requires options.callback to be a function');
   }
 
-  const filterCallback = function(element) {
-    if (!isFocusable(element)) {
+  const element = contextToElement({
+    label: 'when/focusable',
+    context,
+  });
+
+  const filterCallback = function(target) {
+    if (!isFocusable(target)) {
       return false;
     }
 
-    return callback(element);
+    return callback(target);
   };
 
-  const handle = whenVisibleArea({ context, callback: filterCallback, area });
+  const _document = getDocument(element);
+  const handle = whenVisibleArea({ context: element, callback: filterCallback, area });
   const disengage = function() {
-    document.body.removeEventListener('focus', disengage, true);
+    _document.removeEventListener('focus', disengage, true);
     handle && handle.disengage();
   };
 
-  document.body.addEventListener('focus', disengage, true);
+  _document.addEventListener('focus', disengage, true);
 
   return { disengage };
 }

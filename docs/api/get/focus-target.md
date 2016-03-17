@@ -18,6 +18,13 @@ When clicking on the `<span>` element, focus is given to the `<div>`, because it
 </div>
 ```
 
+When clicking on the `<label>` element, focus is given to the `<input>`, because it's the referenced form control.
+
+```html
+<label for="world">Hello</label>
+<input id="world" type="text">
+```
+
 
 ## Usage
 
@@ -32,6 +39,7 @@ var element = ally.get.focusTarget({
 | Name | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
 | context | [`<selector>`](../concepts.md#Selector) | *required* | The element to start searching from. The first element of a collection is used. |
+| except | [`<focus identification exception>`](../concepts.md#Focus-identification-exceptions) | `{}` | The Element to test. |
 
 ### Returns
 
@@ -45,7 +53,15 @@ var element = ally.get.focusTarget({
 ## Examples
 
 
+## Changes
+
+* Since `v1.1.0` elements redirecting focus return their target elements.
+* Since `v1.1.0` exceptions can be passed through to `ally.is.focusable` via the `except` argument.
+
+
 ## Notes
+
+See [`ally.get.focusRedirectTarget`](./focus-redirect-target.md#Notes)
 
 
 ## Related resources

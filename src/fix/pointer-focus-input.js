@@ -9,40 +9,57 @@
   option `accessibility.mouse_focuses_formcontrol` in about:config
 */
 
-import platform from 'platform';
+import polyfillElementPrototypeMatches from '../prototype/element.prototype.matches';
+import getFocusTarget from '../get/focus-target';
 import decorateContext from '../util/decorate-context';
+import getWindow from '../util/get-window';
+import platform from '../util/platform';
 
 let engage;
 let disengage;
 // This fix is only relevant to Safari and Firefox on OSX
-const relevantToCurrentBrowser = platform.os.family === 'OS X'
-  && (platform.layout === 'Gecko' || platform.layout === 'WebKit');
+const relevantToCurrentBrowser = platform.is.OSX && (platform.is.GECKO || platform.is.WEBKIT);
 
 if (!relevantToCurrentBrowser) {
   engage = function() {};
 } else {
-  const inputPattern = /^(input|button)$/;
-
   const handleMouseDownEvent = function(event) {
-    if (event.defaultPrevented || !event.target.nodeName.toLowerCase().match(inputPattern)) {
-      // abort if the mousedown event was cancelled
+    const _window = getWindow(event.target);
+    polyfillElementPrototypeMatches(_window);
+    if (event.defaultPrevented || !event.target.matches('input, button, button *')) {
+      // abort if the mousedown event was cancelled,
+      // or we're not dealing with an affected form control
       return;
     }
 
+    const target = getFocusTarget({
+      context: event.target,
+    });
+
     // we need to set focus AFTER the mousedown finished, otherwise WebKit will ignore the call
     (window.setImmediate || window.setTimeout)(function() {
-      event.target.focus();
+      target.focus();
     });
   };
 
   const handleMouseUpEvent = function(event) {
-    if (event.defaultPrevented || event.target.nodeName.toLowerCase() !== 'label') {
-      // abort if the mouseup event was cancelled
+    const _window = getWindow(event.target);
+    polyfillElementPrototypeMatches(_window);
+    if (event.defaultPrevented || !event.target.matches('label, label *')) {
+      // abort if the mouseup event was cancelled,
+      // or we're not dealing with a <label>
       return;
     }
 
-    // <label> will redirect focus to the appropriate input element on its own
-    event.target.focus();
+    const target = getFocusTarget({
+      context: event.target,
+    });
+
+    if (!target) {
+      return;
+    }
+
+    target.focus();
   };
 
   engage = function(element) {

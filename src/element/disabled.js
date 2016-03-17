@@ -19,14 +19,14 @@
   [WebKit Bug: Inert Subtree](https://bugs.webkit.org/show_bug.cgi?id=110952)
 */
 
+import contextToElement from '../util/context-to-element';
 import tabindexValue from '../util/tabindex-value';
 import isNativeDisabledSupported from '../is/native-disabled-supported';
 import toggleAttributeValue from '../util/toggle-attribute-value';
+import logger from '../util/logger';
 
 function disabledFocus() {
-  /*eslint-disable no-console */
-  console.warn('trying to focus inert element', this);
-  /*eslint-enable no-console */
+  logger.warn('trying to focus inert element', this);
 }
 
 function disableTabindex(element, disabledState) {
@@ -128,10 +128,11 @@ function setElementDisabled(element, disabledState) {
   }
 }
 
-export default function(element, disabledState) {
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
-    throw new TypeError('element/disabled requires an argument of type Element');
-  }
+export default function(context, disabledState) {
+  const element = contextToElement({
+    label: 'element/disabled',
+    context,
+  });
 
   // accept truthy/falsy values
   disabledState = Boolean(disabledState);

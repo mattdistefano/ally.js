@@ -8,6 +8,8 @@ The documentation is authored in markdown in the `docs` directory. We're using [
 
 The idea is to create a documentation that can be read on github and on the generated website.
 
+* **NOTE:** If this is your first contact with ally.js, make sure to run `npm run init` after cloning the repository. This will run `npm install`, `npm run build` and `npm run build:website` to make sure your local copy is ready.
+
 
 ## Building the website
 
@@ -18,6 +20,9 @@ The website is comprised of 3 elements, the markdown sources, data tables and so
 ```sh
 # lint the markdown
 npm run lint:md
+
+# build the library (to `./dist`)
+npm run build
 
 # generate website (to `./web`)
 npm run build:website
@@ -32,7 +37,9 @@ npm run build:data-tables
 npm run build:legacy
 ```
 
-The commands `lint:md` and `build:website` are also executed by `npm run lint` and `npm run build`
+The commands `lint:md` and `build:website` are also executed by `npm run lint` and `npm run build`.
+
+* **NOTE:** Before you build the website using `npm run build:website` you need to have run `npm run build` before, in order for the library components to be available to the website build. You don't need to build the library every time you build the website, which is why this step is disconnected. If you ran `npm run init` after cloning the repository, everything is taken care of already.
 
 If you're new to metalsmith, have a look at [simple static site demo](https://github.com/segmentio/metalsmith/tree/master/examples/static-site) and [getting to know metalsmith](http://www.robinthrift.com/posts/getting-to-know-metalsmith/).
 
@@ -91,7 +98,7 @@ Example documents must follow the following general structure.
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/ally.js/1.0.1/ally.min.js"></script>
+<script src="https://cdn.jsdelivr.net/ally.js/1.1.0/ally.min.js"></script>
 
 <script id="example-js">
   ${example_script}
@@ -149,7 +156,22 @@ tags: option-argument, service, svg
 * **data:** To declare the module provides data, not functionality
 * **internal:** To declare the module is intended for internal use only
 * **browser-fix:** To declare the module's only intention is to counter a specific browser quirk
+* **content-document:** To declare the module resolves `<object>` and `<iframe>` elements to their content documents
 * **shadow-dom:** To declare special support for Shadow DOM
 * **svg:** To declare special support for SVG
 
+### API changes
 
+In addition to the less specific [CHANGELOG.md](https://github.com/medialize/ally.js/tree/master/CHANGELOG.md), API documents must declare specific changes in detail:
+
+```markdown
+## Changes
+
+* `v1.2.3` introduced the option `gustav`
+* `v1.3.0` removed the option `otto`
+* Since `v1.6.0` the function returns coffee instead of tea
+```
+
+Since the exact release version a change will be included in is not necessarily known during development, the placeholder `v#master` should be used.
+
+* **NOTE:** The version notation may be extended to also contain addition `+v1.0.0` / removal `-v1.0.0` / change `~v1.0.0` should this become necessary. The website builder may replace the code elements by links to the change log.

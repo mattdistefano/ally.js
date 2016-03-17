@@ -8,6 +8,8 @@ The build infrastructure consists of a few tools made available through `npm run
 
 This document is concerned with building the JavaScript source code. See [Documentation Infrastructure](docs.md) for how the documentation and website are generated.
 
+* **NOTE:** If this is your first contact with ally.js, make sure to run `npm run init` after cloning the repository. This will run `npm install`, `npm run build` and `npm run build:website` to make sure your local copy is ready.
+
 
 ## Building
 
@@ -94,8 +96,6 @@ See the [Babel CLI docs](https://babeljs.io/docs/usage/cli/)
 
 Since ally.js is using the ES6 Module Syntax - and [eslint](https://github.com/eslint/eslint) does not support that yet - we're using [babel-eslint](https://github.com/babel/babel-eslint) as the parser in eslint and configured via [`.eslintrc`](https://github.com/medialize/ally.js/blob/master/.eslintrc). See the docs to understand the [rules](http://eslint.org/docs/rules).
 
-While code style is validated using eslint, code format is verified using [jscs](http://jscs.info/overview.html) and configured via [`.jscsrc`](https://github.com/medialize/ally.js/blob/master/.jscsrc).
-
 * **Note:** Although listed in the devDependencies of package.json and thus installed locally, babel-eslint has to be installed globally:
 
 ```sh
@@ -123,7 +123,7 @@ Linting is done automatically via git hooks by way of [husky](https://www.npmjs.
 
 Currently only a single ES6 function `Array.prototype.findIndex` is used in ally.js. Should we choose to use more ES6 functions, possibly things like `Set` and `Map`, we would have to include the [babel polyfill](http://babeljs.io/docs/usage/polyfill/) in our distribution. This step should not be taken lightly, as the polyfill is a heavyweight.
 
-```js
+```sh
 npm install babel-core
 cat node_modules/babel-core/browser-polyfill.js dist/ally.js > dist/ally.old-browser.js
 ```

@@ -12,7 +12,7 @@ Determines if an element is considered tabbable and not focusable.
 
 An element is considered tabbable and not focusable if the element is part of the document's focus navigation sequence, but cannot be focused by script.
 
-Consult the data tables [what browsers consider focusable](../../data-tables/focusable.md) and [what ally.js considers focusable](../../data-tables/focusable.strict.md) to learn how HTML elements behave.
+Consult the data tables [what browsers consider focusable](../../data-tables/focusable.md) and [what ally.js fails to consider focusable](../../data-tables/focusable.is.md) to learn how HTML elements behave.
 
 
 ## Usage
@@ -28,9 +28,16 @@ var isOnlyTabbable = ally.is.onlyTabbable(element);
 | ---- | ---- | ------- | ----------- |
 | element | [`HTMLElement`](https://developer.mozilla.org/en/docs/Web/API/HTMLElement) | *required* | The Element to test. |
 
+The underlying rules can also be accessed in the [`options` argument style](../concepts.md#Single-options-argument) by calling `ally.is.onlyTabbable.rules(options)`:
+
+| Name | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| context | [`<selector>`](../concepts.md#Selector) | *required* | The element to examine. The first element of a collection is used. |
+| except | [`<focus identification exception>`](../concepts.md#Focus-identification-exceptions) | `{}` | The Element to test. |
+
 ### Returns
 
-Boolean, `true` if the element is focus relevant.
+Boolean, `true` if the element is only tabbable.
 
 ### Throws
 
@@ -38,6 +45,14 @@ Boolean, `true` if the element is focus relevant.
 
 
 ## Examples
+
+
+## Changes
+
+* Since `v1.1.0` all `<object>` elements in Internet Explorer are not considered only tabbable anymore.
+* Since `v1.1.0` exceptions can be passed to `ally.is.onlyTabbable.rules(options)`.
+* Since `v1.1.0` the state of the `<iframe>` or `<object>` element in which the currently examined element is hosted in is considered.
+* Since `v1.1.0` elements must be [visible](./is/visible.md) to be considered only tabbable.
 
 
 ## Notes
@@ -54,7 +69,7 @@ See [`ally.is.focusRelevant`](./focus-relevant.md#Notes)
 * [`ally.is.tabbable`](tabbable.md) identifies keyboard focusable elements
 
 * [What Browsers Consider Focusable](../../data-tables/focusable.md)
-* [What ally.js Considers Focusable](../../data-tables/focusable.strict.md)
+* [What ally.js fails to consider focusable](../../data-tables/focusable.is.md)
 
 
 ## Contributing

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8" />
-	<title>Gecko: SVGElement.prototype.focus is missing</title>
+  <meta charset="utf-8" />
+  <title>Gecko: SVGElement.prototype.focus is missing</title>
 </head>
 <body>
 
@@ -43,7 +43,7 @@
         var element = document.querySelector(selector);
         element.focus();
         log.textContent += selector + ': ' + (document.activeElement && document.activeElement.nodeName || 'undefined') + '\n';
-      } catch(e) {
+      } catch (e) {
         log.textContent += selector + ': ' + e + '\n';
       }
     });
@@ -64,7 +64,7 @@
         var element = document.querySelector(selector);
         element.focus();
         log.textContent += selector + ': ' + (document.activeElement && document.activeElement.nodeName || 'undefined') + '\n';
-      } catch(e) {
+      } catch (e) {
         log.textContent += selector + ': ' + e + '\n';
       }
     });

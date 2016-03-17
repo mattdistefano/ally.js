@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8" />
-	<title>{{ title }}</title>
+  <meta charset="utf-8" />
+  <title>{{ title }}</title>
 
   <style id="prism-styles">{{> prismCss }}</style>
   <style>
@@ -76,16 +76,21 @@
     table td[data-focusable="false"][data-tabbable="true"],
     table td > span.compare[data-focusable="false"][data-tabbable="true"] {
       /* only tabbable */
-      background: #AAAAFF;
+      background: #19F1FF;
     }
-    table td[data-redirecting="false"],
     table td[data-focusable="false"][data-tabbable="false"],
     table td > span.compare[data-focusable="false"][data-tabbable="false"] {
       /* inert */
       background: #DDDDDD;
     }
-    table td[data-redirecting="true"] {
-      background: #6E92A1;
+    table td[data-redirecting-to],
+    table td > span.compare[data-redirecting-to] {
+      /* redirecting */
+      background: #FFA9F9 !important;
+    }
+    table td[data-focusable="false"][data-tabbable="false"][data-focus-host] {
+      /* hosting focused element */
+      background: #73CCC2;
     }
 
     table td.irrelevant-to-context {
@@ -136,6 +141,10 @@
       color: white;
       background: red;
     }
+    tbody .notes > .note.target {
+      color: white;
+      background: black;
+    }
     tbody .notes > .note.compare-target {
       color: white;
       background: black;
@@ -181,6 +190,14 @@
       display: block;
     }
 
+    code[class*="language-"] {
+      white-space: pre-line;
+    }
+
+    code .token.tag {
+      white-space: pre;
+    }
+
   </style>
 </head>
 <body>
@@ -208,6 +225,8 @@
   <ul id="footnotes-list">
     <li id="footnote-M">The DOM Element Interface is missing the focus method.</li>
     <li id="footnote-E">The <code>focus</code> event is not emitted upon the element becoming the active element (<code>document.activeElement</code>).</li>
+    <li id="footnote-S">The <code>:focus</code> CSS pseudo class is not set on the element when it is the active element (<code>document.activeElement</code>).</li>
+    <li id="footnote-C">The element becomes the active element (<code>document.activeElement</code>) when an element of <code>contentDocument</code> or the <code>shadowRoot</code> has focus.</li>
 
     {{#each notes}}
       <li id="footnote-{{ @key }}">
@@ -226,21 +245,35 @@
     // make sure all tables have the same width
     function justifyTableWidth() {
       var tables = [].slice.call(document.querySelectorAll('table'), 0);
-      var dataCells = [].reduce.call(tables[0].querySelectorAll('col'), function(previous, current) {
-        return previous + (parseInt(current.style.width, 10) || 0);
-      }, 0);
       var largestIdentWidth = 0;
+      var largestDataCellWidth = 0;
 
+      // make the table consume the space it requires
       tables.map(function(table) {
         table.style.position = 'absolute';
         table.style.width = 'auto';
       });
+      // find the widest <th> and <td> to align everything to
       tables.map(function(table) {
         largestIdentWidth = Math.max(largestIdentWidth, table.querySelector('tbody th').offsetWidth);
+        largestDataCellWidth = Math.max.apply(Math, [].map.call(table.querySelectorAll('tbody tr:first-child td'), function(cell) {
+          return cell.offsetWidth;
+        }).concat([largestDataCellWidth]));
       });
+
+      var dataCells = (tables[0].querySelectorAll('col').length - 1) * largestDataCellWidth;
+
+      // align width of <table>, <th> and <td>
       tables.map(function(table) {
         table.style.position = '';
         table.style.width = (dataCells + largestIdentWidth) + 'px';
+        [].forEach.call(table.querySelectorAll('col'), function(col) {
+          if (col.getAttribute('data-column') === 'ident') {
+            return;
+          }
+
+          col.style.width = largestDataCellWidth + 'px';
+        });
       });
     }
 
@@ -268,7 +301,7 @@
       }, true);
 
       firstTable.parentNode.insertBefore(headerTable, firstTable);
-      headerHeight = headerTable.offsetHeight
+      headerHeight = headerTable.offsetHeight;
     }
 
     function addTableOfContentsToStickyHeader() {
@@ -345,60 +378,9 @@
       }
 
       // https://developer.mozilla.org/en-US/docs/Web/Events/hashchange
-      window.addEventListener('hashchange', handleHashchangeEvent, true)
+      window.addEventListener('hashchange', handleHashchangeEvent, true);
     }
 
-    function hideDuplicateRows() {
-      var hashes = {};
-      function hashDataCells(row) {
-        return [].map.call(row.children, function(cell) {
-          return cell.nodeName === 'TD' ? cell.textContent : '';
-        }).join(' -- ');
-      }
-
-      function findIdentRow(tbody, ident) {
-        var target = null;
-        [].some.call(tbody.children, function(row) {
-          if (row.getAttribute('data-row') === ident) {
-            target = row;
-            return true;
-          }
-        });
-
-        return target;
-      }
-
-      [].forEach.call(document.querySelectorAll('tr[data-duplicates]'), function(row) {
-        var ident = row.getAttribute('data-row');
-        var targetIdent = row.getAttribute('data-duplicates');
-        if (!hashes[ident]) {
-          hashes[ident] = hashDataCells(row);
-        }
-        if (!hashes[targetIdent]) {
-          var targetRow = findIdentRow(row.parentNode, targetIdent);
-          hashes[targetIdent] = hashDataCells(targetRow);
-        }
-        if (hashes[ident] === hashes[targetIdent]) {
-          row.hidden = true;
-        }
-      });
-    }
-
-    function hideUnusedFootnotes() {
-      var links = {};
-      [].forEach.call(document.querySelectorAll('.notes > a'), function(element) {
-        var id = element.getAttribute('href').slice(1);
-        links[id] = true;
-      });
-
-      [].forEach.call(document.querySelectorAll('#footnotes-list > li'), function(element) {
-        if (links[element.id]) {
-          return;
-        }
-
-        element.hidden = true;
-      });
-    }
     function bindFootnoteTooltip() {
       var container = document.createElement('div');
       container.id = 'floating-footnote';
@@ -453,6 +435,16 @@
         container.hidden = true;
       }, true);
 
+      // hide the container on ESC
+      document.body.addEventListener('keydown', function(event) {
+        if (event.keyCode !== 27 || container.hidden) {
+          return;
+        }
+
+        container.blur();
+        container.hidden = true;
+      }, true);
+
       // abort jumping to the footnote, as we moved the relevant footnote into view on focus
       document.body.addEventListener('click', function(event) {
         if (!event.target.classList.contains('note') || container.hidden) {
@@ -470,7 +462,6 @@
         return;
       }
 
-      hideDuplicateRows();
       justifyTableWidth();
 
       createHeaderTable();
@@ -483,7 +474,6 @@
       });
 
       if (document.body.hidden !== undefined) {
-        hideUnusedFootnotes();
         bindFootnoteTooltip();
       }
 

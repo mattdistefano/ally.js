@@ -22,7 +22,7 @@ define([
           '<div id="tabindex-0-char" tabindex="0char"></div>',
           '<div id="tabindex-bad" tabindex="bad"></div>',
           '<div id="tabindex-empty" tabindex=""></div>',
-        ].join(''));
+        ]);
       },
       afterEach: function() {
         fixture.remove();
@@ -32,7 +32,10 @@ define([
       invalid: function() {
         expect(function() {
           isValidTabindex(null);
-        }).to.throw(TypeError, 'is/valid-tabindex requires an argument of type Element');
+        }).to.throw(TypeError, 'is/valid-tabindex requires valid options.context');
+      },
+      document: function() {
+        expect(isValidTabindex(document)).to.equal(false);
       },
       'non-tabindex': function() {
         var element = document.getElementById('non-tabindex');
