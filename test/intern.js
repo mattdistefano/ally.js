@@ -83,6 +83,7 @@ define([], function() {
 
     // Functional test suite(s) to run in each browser once non-functional tests are completed
     functionalSuites: [
+      'test/functional/prepare',
       'test/functional/*.test',
     ],
 
