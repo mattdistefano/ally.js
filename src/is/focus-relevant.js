@@ -36,12 +36,13 @@ function isFocusRelevantRules({
     context,
   });
 
-  if (!except.shadow && element.shadowRoot) {
+  const nodeName = element.nodeName.toLowerCase();
+
+  if (!except.shadow && element.shadowRoot && nodeName !== 'html') {
     // a Shadow DOM host receives focus when the focus moves to its content
+    // In Blink <html> is a ShadowHost for <head> and <body>
     return true;
   }
-
-  const nodeName = element.nodeName.toLowerCase();
 
   if (nodeName === 'input' && element.type === 'hidden') {
     // input[type="hidden"] supports.cannot be focused
