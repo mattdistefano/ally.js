@@ -8,6 +8,7 @@
 * fixing [`ally.element.disabled`][ally/element/disabled] to remove SVG links from the document's tabbing order in Firefox
 * fixing [`ally.maintain.disabled`][ally/maintain/disabled] to *not* disable ancestors `filter` elements
 * bumping [domtokenlist-shim](https://github.com/jwilsson/domtokenlist) to not break in IE8 - [issue #112](https://github.com/medialize/ally.js/issues/112)
+* fixing [`ally.is.tabbable`][ally/is/tabbable] to respect `except.scrollable`
 
 
 ## 1.1.0 - Reality Strikes Back
